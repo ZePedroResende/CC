@@ -34,6 +34,7 @@ class probe:
     def _probe(self):
         while True:
             self.socket.sendto(self.MSG, (self.MCAST_GRP, self.MCAST_PORT))
+            time.sleep(1)
 
 
 class updater:
@@ -48,5 +49,4 @@ class updater:
 
 
 if __name__ == '__main__':
-    t1 = threading.Thread(target=probe())
-    t1.start()
+    probe()
