@@ -22,9 +22,8 @@ class Agente:
 
     def start_listening(self):
         def get_pack():
-            return "OLA"
+            return "sadsadsad"
         while True:
-            print("ASDS")
             request, to = self.socket.recvfrom(10240)
             request = request.decode()
             print(request, to)
