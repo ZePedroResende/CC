@@ -3,24 +3,25 @@ import socket
 import json
 import time
 import threading
+import Table
 
 
 class probe:
-    def __init__(self):
+    def __init__(self, table):
         self.MCAST_GRP = '239.8.8.8'
         self.MCAST_PORT = 8888
         self.MSG = self.pack()
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                     socket.IPPROTO_UDP)
         self.initSocket()
-        self.start_updater()
+        self.start_updater(table)
         self._probe()
 
-    def start_updater(self):
+    def start_updater(self, table):
         def worker_updater(u):
             u.response()
 
-        u = updater(self.socket)
+        u = updater(self.socket, table)
         t = threading.Thread(target=worker_updater, args=(u,))
         t.daemon = True
         t.start()
@@ -38,9 +39,10 @@ class probe:
 
 
 class updater:
-    def __init__(self, sock):
+    def __init__(self, sock, table):
         self.MCAST_PORT = 8888
         self.s = sock
+        self.table = table
 
     def response(self):
         while True:
