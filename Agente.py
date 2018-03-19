@@ -24,26 +24,28 @@ class Agente:
                                mreq)
 
     def start_listening(self):
+        def run_bash(cmd):
+            return subprocess.check_output(['bash', '-c', cmd])
+
         def get_pack(msg):
             ip = self.socket.getsockname()[0]
             porta = self.MCAST_PORT
-            ram = subprocess.call("head -1 /proc/meminfo | grep -Po '\d+'")
+            ram = run_bash("head -2 /proc/meminfo | grep -Po '[0-9]+'")
             bandwidth = None
-            cpu = subprocess.call(
+            cpu = run_bash(
              "uptime | awk -F'[a-z]:' '{ print $2}' | awk -F ',' '{print $1}'")
-            rtt = msg['rtt']
+
+            rtt = str(int(time.time()) - int(msg['rtt']))
             auth = ""
-            return json.dumps(
-                {'ip': ip, 'porta': porta, 'ram': ram,
-                    'cpu': cpu, 'rtt': str(time.clock_gettime - rtt),
-                    'bandwidth': bandwidth, 'auth': auth}
-                   )
+            return {'ip': ip, 'porta': str(porta), 'ram': ram,
+                               'cpu': cpu, 'rtt': rtt,
+                               'bandwidth': bandwidth, 'auth': auth}
         while True:
             request, to = self.socket.recvfrom(10240)
-            request = json.load(request.decode())
+            request = json.loads(request.decode())
             print(request, to)
-            msg = (get_pack(request))
-            self.socket.sendto(msg.encode(), to)
+            msg = (str(get_pack(request))).encode()
+            self.socket.sendto(msg, to)
 
 
 if __name__ == '__main__':
