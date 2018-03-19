@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 import socket
 import struct
+import subprocess
+import time
+import json
 
 
 class Agente:
@@ -21,13 +24,26 @@ class Agente:
                                mreq)
 
     def start_listening(self):
-        def get_pack():
-            return "sadsadsad"
+        def get_pack(msg):
+            ip = self.socket.getsockname()[0]
+            porta = self.MCAST_PORT
+            ram = subprocess.call("head -1 /proc/meminfo | grep -Po '\d+'")
+            bandwidth = None
+            cpu = subprocess.call(
+             "uptime | awk -F'[a-z]:' '{ print $2}' | awk -F ',' '{print $1}'")
+            rtt = msg['rtt']
+            auth = ""
+            return json.dumps(
+                {'ip': ip, 'porta': porta, 'ram': ram,
+                    'cpu': cpu, 'rtt': str(time.clock_gettime - rtt),
+                    'bandwidth': bandwidth, 'auth': auth}
+                   )
         while True:
             request, to = self.socket.recvfrom(10240)
-            request = request.decode()
+            request = json.load(request.decode())
             print(request, to)
-            self.socket.sendto((get_pack()).encode(), to)
+            msg = (get_pack(request))
+            self.socket.sendto(msg.encode(), to)
 
 
 if __name__ == '__main__':

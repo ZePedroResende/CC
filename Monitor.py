@@ -3,7 +3,6 @@ import socket
 import json
 import time
 import threading
-import Table
 
 
 class probe:
@@ -27,7 +26,8 @@ class probe:
         t.start()
 
     def pack(self):
-        return json.dumps({"msg": "probe"}, separators=(',', ':')).encode()
+        return json.dumps({'rtt': time.clock_gettime, 'auth': ""},
+                          separators=(',', ':')).encode()
 
     def initSocket(self):
         self.socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
@@ -46,8 +46,10 @@ class updater:
 
     def response(self):
         while True:
-            msg = self.s.recv(1024).decode()
-            print(msg)
+            msg = json.load(self.s.recv(1024).decode())
+            server_info = self.table.build_server(**msg)
+            print(server_info)
+            self.table.add_server(server_info)
 
 
 if __name__ == '__main__':
