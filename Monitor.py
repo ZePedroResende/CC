@@ -3,8 +3,8 @@ import socket
 import json
 import time
 import threading
-import atexit
 from table import table
+import atexit
 
 
 class probe:
@@ -48,14 +48,17 @@ class updater:
 
     def response(self):
         while True:
-            msg = eval(self.s.recv(1024).decode())
+            msg, ip = self.s.recvfrom(1024)
+            msg = eval(msg.decode())
+            msg['rtt'] = (float(time.time()) - float(msg['rtt']))
+            msg['ip'] = ip[0]
             server_info = self.table.build_server(**msg)
             print(server_info)
             self.table.add_server(server_info)
 
 
-def printable(table):
-    print(table)
+def printable(t):
+    t.print()
 
 
 if __name__ == '__main__':

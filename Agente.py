@@ -2,8 +2,9 @@
 import socket
 import struct
 import subprocess
-import time
 import json
+import time
+from random import randint
 
 
 class Agente:
@@ -28,23 +29,25 @@ class Agente:
             return subprocess.check_output(['bash', '-c', cmd])
 
         def get_pack(msg):
-            ip = self.socket.getsockname()[0]
             porta = self.MCAST_PORT
-            ram = run_bash("head -2 /proc/meminfo | grep -Po '[0-9]+'")
-            bandwidth = None
+            ram = run_bash("head -2 /proc/meminfo | grep -Po '[0-9]+'"
+                           + "|sed -e ':a' -e 'N' -e '$!ba' -e 's/\\n/ /g'"
+                           + "|awk -F ' ' '{print ((($1 - $2) / $1) * 100)}'")
+
+            bandwidth = int(run_bash("netstat | grep tcp | wc -l")
+                            ) / int(run_bash("ulimit -n")) * 100
             cpu = run_bash(
              "uptime | awk -F'[a-z]:' '{ print $2}' | awk -F ',' '{print $1}'")
-
-            rtt = str(int(time.time()) - int(msg['rtt']))
             auth = ""
-            return {'ip': ip, 'porta': str(porta), 'ram': ram,
-                               'cpu': cpu, 'rtt': rtt,
-                               'bandwidth': bandwidth, 'auth': auth}
+            return {'ip': "", 'porta': str(porta), 'ram': ram,
+                    'cpu': cpu, 'rtt': msg['rtt'],
+                    'bandwidth': bandwidth, 'auth': auth}
         while True:
             request, to = self.socket.recvfrom(10240)
             request = json.loads(request.decode())
             print(request, to)
             msg = (str(get_pack(request))).encode()
+            time.sleep(randint(0, 10))
             self.socket.sendto(msg, to)
 
 
