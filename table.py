@@ -36,18 +36,20 @@ class table:
         self.best_server()
 
     def best_server(self):
-        def media(d):
-            d = d[1]
-            media = (d['ram'] + d['cpu'] + d['bandwidth'])/3
-            load = media <= 70
-            time = d['rtt'] < 60
-            return load and time
+        with self.lock:
+            def media(d):
+                d = d[1]
+                media = (d['ram'] + d['cpu'] + d['bandwidth'])/3
+                load = media <= 70
+                time = d['rtt'] < 60
+                return load and time
 
-        lista = sorted(self.server_list.items(),
-                       key=lambda x: x[1]['n_times'])
-        filt = list(filter(lambda x: media(x), lista))
-        if not filt:
-            res = lista[0][1]
-        else:
-            res = filt[0][1]
-        print(res)
+            lista = sorted(self.server_list.items(),
+                           key=lambda x: x[1]['n_times'])
+            filt = list(filter(lambda x: media(x), lista))
+            if not filt:
+                res = lista[0][1]
+            else:
+                res = filt[0][1]
+            self.server_list[res['ip']]['n_times'] += 1
+            return res
