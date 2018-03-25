@@ -3,14 +3,15 @@ import socket
 import json
 import time
 import threading
-import Table
+from table import table
+import atexit
 
 
 class probe:
     def __init__(self, table):
         self.MCAST_GRP = '239.8.8.8'
         self.MCAST_PORT = 8888
-        self.MSG = self.pack()
+        self.MSG = ""
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                     socket.IPPROTO_UDP)
         self.initSocket()
@@ -27,14 +28,15 @@ class probe:
         t.start()
 
     def pack(self):
-        return json.dumps({"msg": "probe"}, separators=(',', ':')).encode()
+        return json.dumps({'rtt': str(int(time.time())), 'auth': ""},
+                          separators=(',', ':')).encode()
 
     def initSocket(self):
         self.socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
 
     def _probe(self):
         while True:
-            self.socket.sendto(self.MSG, (self.MCAST_GRP, self.MCAST_PORT))
+            self.socket.sendto(self.pack(), (self.MCAST_GRP, self.MCAST_PORT))
             time.sleep(1)
 
 
@@ -46,9 +48,20 @@ class updater:
 
     def response(self):
         while True:
-            msg = self.s.recv(1024).decode()
-            print(msg)
+            msg, ip = self.s.recvfrom(1024)
+            msg = eval(msg.decode())
+            msg['rtt'] = (float(time.time()) - float(msg['rtt']))
+            msg['ip'] = ip[0]
+            server_info = self.table.build_server(**msg)
+            print(server_info)
+            self.table.add_server(server_info)
+
+
+def printable(t):
+    t.print()
 
 
 if __name__ == '__main__':
-    probe()
+    t = table()
+    atexit.register(printable, t)
+    probe(t)

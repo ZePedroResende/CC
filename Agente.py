@@ -1,6 +1,10 @@
 #!/usr/bin/python3
 import socket
 import struct
+import subprocess
+import json
+import time
+from random import randint
 
 
 class Agente:
@@ -21,13 +25,30 @@ class Agente:
                                mreq)
 
     def start_listening(self):
-        def get_pack():
-            return "sadsadsad"
+        def run_bash(cmd):
+            return subprocess.check_output(['bash', '-c', cmd])
+
+        def get_pack(msg):
+            porta = self.MCAST_PORT
+            ram = run_bash("head -2 /proc/meminfo | grep -Po '[0-9]+'"
+                           + "|sed -e ':a' -e 'N' -e '$!ba' -e 's/\\n/ /g'"
+                           + "|awk -F ' ' '{print ((($1 - $2) / $1) * 100)}'")
+
+            bandwidth = int(run_bash("netstat | grep tcp | wc -l")
+                            ) / int(run_bash("ulimit -n")) * 100
+            cpu = run_bash(
+             "uptime | awk -F'[a-z]:' '{ print $2}' | awk -F ',' '{print $1}'")
+            auth = ""
+            return {'ip': "", 'porta': str(porta), 'ram': ram,
+                    'cpu': cpu, 'rtt': msg['rtt'],
+                    'bandwidth': bandwidth, 'auth': auth}
         while True:
             request, to = self.socket.recvfrom(10240)
-            request = request.decode()
+            request = json.loads(request.decode())
             print(request, to)
-            self.socket.sendto((get_pack()).encode(), to)
+            msg = (str(get_pack(request))).encode()
+            time.sleep(randint(0, 10))
+            self.socket.sendto(msg, to)
 
 
 if __name__ == '__main__':
