@@ -1,5 +1,4 @@
 import threading
-from random import randint
 
 
 class table:
@@ -20,7 +19,7 @@ class table:
         return {'ip': ip, 'porta': porta, 'ram': float(ram.decode()),
                 'cpu': float(cpu.decode()), 'rtt': float(rtt),
                 'bandwidth': float(bandwidth), 'auth': auth,
-                'n_times': randint(0, 10)}
+                'n_times': 0}
 
     def print(self):
         print("\n")
@@ -33,9 +32,11 @@ class table:
         for each in lista:
             print(each)
         print("-"*m)
-        self.best_server()
+        print(self.best_server())
 
     def best_server(self):
+        print("1")
+
         def media(d):
             d = d[1]
             media = (d['ram'] + d['cpu'] + d['bandwidth'])/3
@@ -43,11 +44,17 @@ class table:
             time = d['rtt'] < 60
             return load and time
 
-        lista = sorted(self.server_list.items(),
-                       key=lambda x: x[1]['n_times'])
-        filt = list(filter(lambda x: media(x), lista))
-        if not filt:
-            res = lista[0][1]
-        else:
-            res = filt[0][1]
-        print(res)
+        with self.lock:
+            print("2")
+            lista = sorted(self.server_list.items(),
+                           key=lambda x: x[1]['n_times'])
+            print("3")
+            filt = list(filter(lambda x: media(x), lista))
+            print("4")
+            if not filt:
+                res = lista[0][1]
+            else:
+                res = filt[0][1]
+            self.server_list[res['ip']]['n_times'] += 1
+            print("5")
+            return res
