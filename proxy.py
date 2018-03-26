@@ -15,8 +15,9 @@ class proxy:
         self.initSocket()
         self.table = table()
         self.queue = Queue(maxsize=0)
-        self.pool = self.start_pool
+        self.pool = self.start_pool()
         self.start_monitor()
+        self.listen()
 
     def initSocket(self):
         self.sock.bind(('', 80))
@@ -25,15 +26,15 @@ class proxy:
     def listen(self):
         while True:
             connection, client_address = self.sock.accept()
-            self.queueIn.put(connection)
+            self.queue.put(connection)
 
     def start_pool(self):
 
-        def _proxyHandler(queue, table):
-            proxyHandler(queue, table)
+        def _proxyHandler():
+            proxyHandler(self.queue, self.table)
 
         executor = ThreadPoolExecutor(max_workers=100)
-        return executor.submit(_proxyHandler, self.queue, self.table)
+        return executor.submit(_proxyHandler)
 
     def start_monitor(self):
 
@@ -42,7 +43,7 @@ class proxy:
 
         u = probe(self.table, start=False)
         t = Thread(target=_monitor, args=(u,))
-        t.daemon = True
+        t.daemon = False
         t.start()
 
 
@@ -53,19 +54,28 @@ class proxyHandler:
         self.comunicate()
 
     def comunicate(self):
-        while True:
-            com = self.queue.get()
-            server = table.best_server()
-            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect((server, 80))
+        def loop(r, s):
             while True:
-                data = com.recv(4096)
+                data = r.recv(4096)
                 if not data:
                     s.close()
                     break
-                s.send(data)
-                response = s.recv()
-                com.send(response)
+                s.sendall(data)
+
+        while True:
+            com = self.queue.get()
+            server_json = self.table.best_server()
+            server = server_json['ip']
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.connect((server, 80))
+            t1 = Thread(target=loop, args=(s, com,))
+            t2 = Thread(target=loop, args=(com, s,))
+            t1.daemon = False
+            t2.daemon = False
+            t1.start()
+            t2.start()
+            t1.join()
+            t2.join()
 
 
 if __name__ == '__main__':

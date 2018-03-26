@@ -9,6 +9,7 @@ import atexit
 
 class probe:
     def __init__(self, table, start=True):
+        self.table = table
         self.MCAST_GRP = '239.8.8.8'
         self.MCAST_PORT = 8888
         self.MSG = ""
@@ -16,14 +17,13 @@ class probe:
                                     socket.IPPROTO_UDP)
         self.initSocket()
         if start:
-            self.start_updater(table)
-            self._probe()
+            self.remote_start()
 
-    def start_updater(self, table):
+    def start_updater(self):
         def worker_updater(u):
             u.response()
 
-        u = updater(self.socket, table)
+        u = updater(self.socket, self.table)
         t = threading.Thread(target=worker_updater, args=(u,))
         t.daemon = True
         t.start()
@@ -41,7 +41,7 @@ class probe:
             time.sleep(1)
 
     def remote_start(self):
-        self.start_updater(table)
+        self.start_updater()
         self._probe()
 
 
