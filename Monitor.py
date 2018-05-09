@@ -5,6 +5,7 @@ import time
 import threading
 from table import table
 import atexit
+from auth import check_packet, create_packet
 
 
 class probe:
@@ -15,6 +16,7 @@ class probe:
         self.MSG = ""
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                     socket.IPPROTO_UDP)
+        self.n_packet = 0
         self.initSocket()
         if start:
             self.remote_start()
@@ -29,7 +31,9 @@ class probe:
         t.start()
 
     def pack(self):
-        return json.dumps({'rtt': str(int(time.time())), 'auth': ""},
+        self.n_packet += 1
+        return json.dumps(create_packet({'n_packet': self.n_packet,
+                                         'rtt': str(int(time.time()))}),
                           separators=(',', ':')).encode()
 
     def initSocket(self):
@@ -53,13 +57,15 @@ class updater:
 
     def response(self):
         while True:
-            msg, ip = self.s.recvfrom(1024)
-            msg = eval(msg.decode())
-            msg['rtt'] = (float(time.time()) - float(msg['rtt']))
-            msg['ip'] = ip[0]
-            server_info = self.table.build_server(**msg)
-            print(server_info)
-            self.table.add_server(server_info)
+            p, ip = self.s.recvfrom(1024)
+            p = eval(p.decode())
+            msg = check_packet(p)
+            if msg:
+                msg['rtt'] = (float(time.time()) - float(msg['rtt']))
+                msg['ip'] = ip[0]
+                server_info = self.table.build_server(**msg)
+                print(server_info)
+                self.table.add_server(server_info)
 
 
 def printable(t):
