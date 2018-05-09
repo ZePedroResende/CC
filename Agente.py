@@ -12,11 +12,11 @@ class Agente:
     def __init__(self):
         self.MCAST_GRP = '239.8.8.8'
         self.MCAST_PORT = 8888
+        self.n_packet = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                     socket.IPPROTO_UDP)
         self.init_socket()
         self.start_listening()
-        self.n_packet = 0
 
     def init_socket(self):
         self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -40,8 +40,8 @@ class Agente:
                             ) / int(run_bash("ulimit -n")) * 100
             cpu = run_bash(
              "uptime | awk -F'[a-z]:' '{ print $2}' | awk -F ',' '{print $1}'")
-            return create_packet({'ip': "", 'porta': str(porta), 'ram': ram,
-                                  'cpu': cpu, 'rtt': msg['rtt'],
+            return create_packet({'ip': "", 'porta': str(porta), 'ram': ram.decode('utf-8'),
+                                  'cpu': cpu.decode('utf-8'), 'rtt': msg['rtt'],
                                   'bandwidth': bandwidth})
         while True:
             request, to = self.socket.recvfrom(10240)
