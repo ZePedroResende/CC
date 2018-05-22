@@ -63,6 +63,7 @@ class updater:
             if msg:
                 msg['rtt'] = (float(time.time()) - float(msg['rtt']))
                 msg['ip'] = ip[0]
+                msg['auth'] = p['auth']
                 server_info = self.table.build_server(**msg)
                 print(server_info)
                 self.table.add_server(server_info)

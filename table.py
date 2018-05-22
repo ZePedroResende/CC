@@ -15,11 +15,15 @@ class table:
             del self.server_list[server['ip']]
 
     def build_server(self, ip, porta, ram, cpu, rtt,
-                     bandwidth, auth=None):
+                     bandwidth, auth):
+        n_times = 0
+        with self.lock:
+            if ip in self.server_list:
+                n_times += self.server_list[ip]['n_times']
         return {'ip': ip, 'porta': porta, 'ram': float(ram),
                 'cpu': float(cpu), 'rtt': float(rtt),
-                'bandwidth': float(bandwidth), 'auth': auth,
-                'n_times': 0}
+                'bandwidth': float(bandwidth),
+                'n_times': n_times}
 
     def print(self):
         print("\n")
@@ -35,7 +39,6 @@ class table:
         print(self.best_server())
 
     def best_server(self):
-        print("1")
 
         def media(d):
             d = d[1]
@@ -45,16 +48,12 @@ class table:
             return load and time
 
         with self.lock:
-            print("2")
             lista = sorted(self.server_list.items(),
                            key=lambda x: x[1]['n_times'])
-            print("3")
             filt = list(filter(lambda x: media(x), lista))
-            print("4")
             if not filt:
                 res = lista[0][1]
             else:
                 res = filt[0][1]
             self.server_list[res['ip']]['n_times'] += 1
-            print("5")
             return res
