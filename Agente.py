@@ -5,7 +5,7 @@ import subprocess
 import json
 import time
 from random import randint
-from auth import check_packet, create_packet
+from auth import check_packet, create_packet, encrypt, decrypt
 
 
 class Agente:
@@ -45,7 +45,7 @@ class Agente:
                                   'bandwidth': bandwidth})
         while True:
             request, to = self.socket.recvfrom(10240)
-            packet = json.loads(request.decode())
+            packet = json.loads(decrypt(request.decode()))
             request = check_packet(packet)
             if request:
                 if request['n_packet'] > self.n_packet:
@@ -53,7 +53,7 @@ class Agente:
                     print(request, to)
                     msg = (str(get_pack(request))).encode()
                     time.sleep(randint(0, 10))
-                    self.socket.sendto(msg, to)
+                    self.socket.sendto(encrypt(msg), to)
 
 
 if __name__ == '__main__':

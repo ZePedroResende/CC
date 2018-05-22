@@ -5,7 +5,7 @@ import time
 import threading
 from table import table
 import atexit
-from auth import check_packet, create_packet
+from auth import check_packet, create_packet, encrypt, decrypt
 
 
 class probe:
@@ -32,9 +32,9 @@ class probe:
 
     def pack(self):
         self.n_packet += 1
-        return json.dumps(create_packet({'n_packet': self.n_packet,
-                                         'rtt': str(int(time.time()))}),
-                          separators=(',', ':')).encode()
+        return encrypt(json.dumps(create_packet({'n_packet': self.n_packet,
+                        'rtt': str(int(time.time()))}),
+                                  separators=(',', ':')).encode())
 
     def initSocket(self):
         self.socket.setsockopt(socket.IPPROTO_IP, socket.IP_MULTICAST_TTL, 32)
@@ -59,7 +59,7 @@ class updater:
         while True:
             p, ip = self.s.recvfrom(1024)
             p = eval(p.decode())
-            msg = check_packet(p)
+            msg = check_packet(decrypt(p))
             if msg:
                 msg['rtt'] = (float(time.time()) - float(msg['rtt']))
                 msg['ip'] = ip[0]
