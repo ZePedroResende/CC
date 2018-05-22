@@ -45,7 +45,7 @@ class Agente:
                                   'bandwidth': bandwidth})
         while True:
             request, to = self.socket.recvfrom(10240)
-            packet = json.loads(decrypt(request.decode()))
+            packet = json.loads(decrypt(request).decode())
             request = check_packet(packet)
             if request:
                 if request['n_packet'] > self.n_packet:

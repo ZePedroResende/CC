@@ -58,8 +58,8 @@ class updater:
     def response(self):
         while True:
             p, ip = self.s.recvfrom(1024)
-            p = eval(p.decode())
-            msg = check_packet(decrypt(p))
+            p = eval(decrypt(p).decode())
+            msg = check_packet((p))
             if msg:
                 msg['rtt'] = (float(time.time()) - float(msg['rtt']))
                 msg['ip'] = ip[0]
