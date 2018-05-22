@@ -5,12 +5,14 @@ import subprocess
 import json
 import time
 from random import randint
+from auth import check_packet, create_packet, encrypt, decrypt
 
 
 class Agente:
     def __init__(self):
         self.MCAST_GRP = '239.8.8.8'
         self.MCAST_PORT = 8888
+        self.n_packet = 0
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM,
                                     socket.IPPROTO_UDP)
         self.init_socket()
@@ -38,17 +40,20 @@ class Agente:
                             ) / int(run_bash("ulimit -n")) * 100
             cpu = run_bash(
              "uptime | awk -F'[a-z]:' '{ print $2}' | awk -F ',' '{print $1}'")
-            auth = ""
-            return {'ip': "", 'porta': str(porta), 'ram': ram,
-                    'cpu': cpu, 'rtt': msg['rtt'],
-                    'bandwidth': bandwidth, 'auth': auth}
+            return create_packet({'ip': "", 'porta': str(porta), 'ram': ram.decode('utf-8'),
+                                  'cpu': cpu.decode('utf-8'), 'rtt': msg['rtt'],
+                                  'bandwidth': bandwidth})
         while True:
             request, to = self.socket.recvfrom(10240)
-            request = json.loads(request.decode())
-            print(request, to)
-            msg = (str(get_pack(request))).encode()
-            time.sleep(randint(0, 10))
-            self.socket.sendto(msg, to)
+            packet = json.loads(decrypt(request).decode())
+            request = check_packet(packet)
+            if request:
+                if request['n_packet'] > self.n_packet:
+                    self.n_packet = request['n_packet']
+                    print(request, to)
+                    msg = (str(get_pack(request))).encode()
+                    time.sleep(randint(0, 10))
+                    self.socket.sendto(encrypt(msg), to)
 
 
 if __name__ == '__main__':

@@ -16,8 +16,8 @@ class table:
 
     def build_server(self, ip, porta, ram, cpu, rtt,
                      bandwidth, auth=None):
-        return {'ip': ip, 'porta': porta, 'ram': float(ram.decode()),
-                'cpu': float(cpu.decode()), 'rtt': float(rtt),
+        return {'ip': ip, 'porta': porta, 'ram': float(ram),
+                'cpu': float(cpu), 'rtt': float(rtt),
                 'bandwidth': float(bandwidth), 'auth': auth,
                 'n_times': 0}
 

@@ -1,17 +1,3 @@
-node n5 {
-    type lanswitch
-    network-config {
-	hostname n5
-	!
-    }
-    canvas c1
-    iconcoords {251.0 373.0}
-    labelcoords {251.0 397.0}
-    interface-peer {e1 n2}
-    interface-peer {e2 n3}
-    interface-peer {e3 n4}
-}
-
 node n2 {
     type router
     model host
