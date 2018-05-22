@@ -7,13 +7,15 @@ from keys import key, iv
 
 
 def create_packet(data):
-    auth = hashlib.md5(json.dumps(data,sort_keys=True).encode('utf-8')).hexdigest()
+    auth = hashlib.md5(json.dumps(data, sort_keys=True)
+                       .encode('utf-8')).hexdigest()
     return {'auth': auth, 'data': data}
 
 
 def check_packet(packet):
     info = packet['data']
-    auth = hashlib.md5(json.dumps(info,sort_keys=True).encode('utf-8')).hexdigest()
+    auth = hashlib.md5(json.dumps(info, sort_keys=True)
+                       .encode('utf-8')).hexdigest()
     if auth == packet['auth']:
         return info
     else:
